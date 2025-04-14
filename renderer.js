@@ -40,6 +40,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setInterval(checkApiStatus, 60000);
 
+  const fileInput = document.getElementById('files-individual-message');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+  fileInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+      const names = Array.from(files).map(file => file.name).join(', ');
+      fileNameDisplay.textContent = names;
+    } else {
+      fileNameDisplay.textContent = 'Nenhum arquivo selecionado';
+    }
+  });
+
+  const excelInput = document.getElementById('excelFile');
+  const excelInputDisplay = document.getElementById('excelFileName');
+
+  excelInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+      const names = Array.from(files).map(file => file.name).join(', ');
+      excelInputDisplay.textContent = names;
+    } else {
+      excelInputDisplay.textContent = 'Nenhum arquivo selecionado';
+    }
+  });
+
+  const filesSheetInput = document.getElementById('files-sheets-message');
+  const filesSheetDisplay = document.getElementById('filesSheetsFileName');
+
+  filesSheetInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+      const names = Array.from(files).map(file => file.name).join(', ');
+      filesSheetDisplay.textContent = names;
+    } else {
+      filesSheetDisplay.textContent = 'Nenhum arquivo selecionado';
+    }
+  });
+  
   document.getElementById('resetConnection').addEventListener('click', async () => {
     const confirmacao = confirm("Tem certeza que deseja refazer a conexão? Isso irá apagar os dados de autenticação.");
     if (!confirmacao) return;
