@@ -3,18 +3,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ws.onmessage = (event) => {
     const message = JSON.parse(event.data);
-
-    if (message.type === 'qr') {
-      const qrContainer = document.getElementById('qrcode');
-      qrContainer.innerHTML = '';
-      QRCode.toCanvas(message.data, { width: 300 }, function (error, canvas) {
-        if (error) console.error(error);
-        qrContainer.appendChild(canvas);
-      });
+    const qrContainer = document.getElementById('qrcode');
+    const status = document.getElementById('status');
+  
+    switch (message.type) {
+      case 'qr':
+        if (status.textContent !== 'API Conectada') {
+          qrContainer.innerHTML = '';
+          QRCode.toCanvas(message.data, { width: 300 }, function (error, canvas) {
+            if (error) console.error(error);
+            qrContainer.appendChild(canvas);
+          });
+        }
+        break;
+  
+      case 'connected':
+        qrContainer.innerHTML = '';
+        status.textContent = 'API Conectada';
+        break;
     }
-  };
+  };  
 
-  // Função para verificar o status da API
   const checkApiStatus = async () => {
     try {
       const response = await fetch('http://localhost:3000/status');
@@ -27,16 +36,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Verifica o status da API quando a página for carregada
   checkApiStatus();
 
-  // Configura para verificar o status a cada 1 minuto (60.000 milissegundos)
   setInterval(checkApiStatus, 60000);
 
-  document.getElementById('sendForm').addEventListener('submit', async (e) => {
-    e.preventDefault(); // Previne o comportamento padrão do formulário
+  document.getElementById('resetConnection').addEventListener('click', async () => {
+    const confirmacao = confirm("Tem certeza que deseja refazer a conexão? Isso irá apagar os dados de autenticação.");
+    if (!confirmacao) return;
+  
+    try {
+      const res = await fetch('http://localhost:3000/reset-session', {
+        method: 'POST'
+      });
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        document.getElementById('resetResult').textContent = data.message || 'Conexão reiniciada com sucesso.';
+        document.getElementById('resetResult').style.color = 'green';
+      } else {
+        document.getElementById('resetResult').textContent = data.error || 'Erro ao refazer a conexão.';
+        document.getElementById('resetResult').style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('resetResult').textContent = 'Erro ao conectar com a API.';
+      document.getElementById('resetResult').style.color = 'red';
+    }
+  });
+  
 
-    console.log("Formulário enviado (sem recarregar a página)"); // Adicione este log para verificar
+  document.getElementById('sendForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    console.log("Formulário enviado (sem recarregar a página)");
     
     const number = document.getElementById('number').value;
     const message = document.getElementById('message').value;

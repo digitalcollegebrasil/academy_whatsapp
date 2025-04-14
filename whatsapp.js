@@ -1,13 +1,17 @@
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
 
-function startWhatsApp() {
-    const client = new Client({
+let client;
+let wss;
+let server;
+
+function createClient() {
+    client = new Client({
         authStrategy: new LocalAuth(),
     });
-
-    let wss;
 
     client.on('qr', (qr) => {
         console.log('📱 QR Code gerado');
@@ -22,7 +26,21 @@ function startWhatsApp() {
 
     client.on('ready', () => {
         console.log('✅ Cliente do WhatsApp está pronto!');
-    });
+        
+        if (wss) {
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type: 'connected' }));
+                }
+            });
+        }
+    });    
+
+    client.initialize();
+}
+
+function startWhatsApp() {
+    createClient()
 
     const app = express();
     app.use(express.json());
@@ -76,6 +94,33 @@ function startWhatsApp() {
         }
     });
 
+    let isResetting = false;
+
+    app.post('/reset-session', async (req, res) => {
+        if (isResetting) return res.status(429).json({ error: 'Reset em andamento.' });
+        isResetting = true;
+      
+        try {
+          if (client) await client.destroy();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+      
+          const authPath = path.join(__dirname, '.wwebjs_auth');
+          const cachePath = path.join(__dirname, '.wwebjs_cache');
+      
+          if (fs.existsSync(authPath)) fs.rmSync(authPath, { recursive: true, force: true });
+          if (fs.existsSync(cachePath)) fs.rmSync(cachePath, { recursive: true, force: true });
+      
+          await createClient();
+      
+          res.json({ message: 'Sessão resetada com sucesso.' });
+        } catch (err) {
+          console.error('Erro ao resetar a sessão:', err);
+          res.status(500).json({ error: 'Erro ao resetar a sessão.' });
+        } finally {
+          isResetting = false;
+        }
+    });
+
     app.get('/', (req, res) => {
         res.send('Servidor WhatsApp está rodando!');
     });
@@ -85,13 +130,11 @@ function startWhatsApp() {
         res.json({ status });
     });
 
-    const server = app.listen(3000, () => {
+    server = app.listen(3000, () => {
         console.log('Servidor rodando na porta 3000');
     });
 
     wss = new WebSocket.Server({ server });
-
-    client.initialize();
 }
 
 module.exports = startWhatsApp;
