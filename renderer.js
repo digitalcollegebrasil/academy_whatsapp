@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         status.textContent = 'API Conectada';
         break;
     }
-  };  
+  };
 
   const checkApiStatus = async () => {
     try {
@@ -68,35 +68,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('sendForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
     console.log("Formulário enviado (sem recarregar a página)");
     
     const number = document.getElementById('number').value;
     const message = document.getElementById('message').value;
+    const files = document.getElementById('files-individual-message').files;
+
+    const formData = new FormData();
+    formData.append('number', number);
+    formData.append('message', message);
+
+    Array.from(files).forEach(file => {
+        formData.append('files', file);
+    });
 
     try {
-      console.log("Enviando mensagem para", number);
-      const res = await fetch('http://localhost:3000/send-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number, message })
-      });
+        console.log("Enviando mensagem (e arquivos, caso tenha) para", number);
+        const res = await fetch('http://localhost:3000/send-message', {
+            method: 'POST',
+            body: formData
+        });
 
-      const data = await res.json();
-      console.log(data);
+        const data = await res.json();
+        console.log(data);
 
-      if (res.ok) {
-        document.getElementById('sendResult').textContent = data.success;
-        document.getElementById('sendResult').style.color = 'green';
-      } else {
-        document.getElementById('sendResult').textContent = data.error || 'Erro desconhecido';
-        document.getElementById('sendResult').style.color = 'red';
-      }
+        if (res.ok) {
+            document.getElementById('sendResult').textContent = data.success;
+            document.getElementById('sendResult').style.color = 'green';
+        } else {
+            document.getElementById('sendResult').textContent = data.error || 'Erro desconhecido';
+            document.getElementById('sendResult').style.color = 'red';
+        }
 
     } catch (err) {
-      console.error("Erro ao conectar com o servidor:", err);
-      document.getElementById('sendResult').textContent = 'Erro ao conectar com o servidor.';
-      document.getElementById('sendResult').style.color = 'red';
+        console.error("Erro ao conectar com o servidor:", err);
+        document.getElementById('sendResult').textContent = 'Erro ao conectar com o servidor.';
+        document.getElementById('sendResult').style.color = 'red';
     }
   });
 
@@ -157,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     const template = document.getElementById('templateMessage').value;
+    const files = document.getElementById('files-sheets-message').files;
   
     let enviados = 0;
   
@@ -175,12 +183,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   
       const message = template.replace(/\$\{([^}]+)\}/g, (_, key) => dataObj[key.trim()] || '');
+
+      const formData = new FormData();
+      formData.append('number', number);
+      formData.append('message', message);
+
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
+      });
   
       try {
         const res = await fetch('http://localhost:3000/send-message', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ number, message })
+          body: formData
         });
   
         const result = await res.json();

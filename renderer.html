@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' ws://localhost:3000 http://localhost:3000; style-src 'self' 'unsafe-inline'; img-src 'self' https://digitalcollege.com.br;">
   <meta charset="UTF-8">
@@ -9,26 +9,37 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <img src="https://digitalcollege.com.br/wp-content/uploads/2022/05/logo-digital-1536x578.png" alt="WhatsApp Logo" width="400">
+  <img src="https://digitalcollege.com.br/wp-content/uploads/2022/05/logo-digital-1536x578.png" alt="Logo Digital College" width="400">
   <h1>Sistema de Envio de Mensagens por WhatsApp</h1>
-  <p>Status da API: <span id="status">carregando...</span></p>
+  <p>Status da API: <span id="status">Carregando...</span></p>
   <div id="qrcode"></div>
   <button id="resetConnection">Refazer Conexão com o WhatsApp</button>
   <p id="resetResult"></p>
+
   <h2>Enviar Mensagem Individual</h2>
   <form id="sendForm">
     <input type="text" id="number" placeholder="Número com DDI (ex: 5599999999999)" required />
     <textarea id="message" placeholder="Digite a mensagem" required></textarea>
+    <input type="file" id="files-individual-message" accept="*" multiple />
     <button type="submit">Enviar Mensagem</button>
   </form>
   <p id="sendResult"></p>
+
   <h2>Enviar Mensagens em Massa (via Planilha)</h2>
   <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" />
   <br/>
-  <select id="headerRowSelector" required></select>
-  <select id="colNumber" required></select>
+
+  <select id="headerRowSelector" required>
+    <option value="" disabled selected>Selecione a linha de cabeçalho</option>
+  </select>
+
+  <select id="colNumber" required>
+    <option value="" disabled selected>Selecione a coluna com o número de telefone</option>
+  </select>
+
   <br/>
   <h3>Mensagem personalizada (use variáveis como ${nome}, ${turma})</h3>
+  <input type="file" id="files-sheets-message" accept="*" multiple />
   <textarea id="templateMessage" placeholder="Ex: Olá ${nome}, sua turma é ${turma}." rows="4" cols="50"></textarea>
   <button id="sendMessagesButton">Enviar Mensagens da Planilha</button>
   <p id="batchResult"></p>
