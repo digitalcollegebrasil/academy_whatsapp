@@ -4,36 +4,35 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' ws://localhost:3000 http://localhost:3000; style-src 'self' 'unsafe-inline'; img-src 'self' https://digitalcollege.com.br;">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Electron</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; background-color: black; color: white; }
-    img { margin-bottom: 1rem; }
-    h1 { font-size: 2rem; margin-bottom: 1rem; }
-    h2 { font-size: 1.5rem; margin-top: 2rem; }
-    form { display: flex; flex-direction: column; align-items: center; }
-    input, textarea { width: 300px; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    button { padding: 0.5rem 1rem; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #0056b3; }
-    #qrcode { margin-top: 2rem; }
-    canvas { margin: auto; }
-  </style>
+  <title>Sistema de Envio de Mensagens por WhatsApp</title>
+  <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <img src="https://digitalcollege.com.br/wp-content/uploads/2022/05/logo-digital-1536x578.png" alt="WhatsApp Logo" width="400">
-  <h1>WhatsApp + Electron</h1>
+  <h1>Sistema de Envio de Mensagens por WhatsApp</h1>
   <p>Status da API: <span id="status">carregando...</span></p>
   <div id="qrcode"></div>
-  <h2>Enviar Mensagem</h2>
+  <h2>Enviar Mensagem Individual</h2>
   <form id="sendForm">
-    <input type="text" id="number" placeholder="Número com DDD" required />
-    <br/><br/>
-    <textarea id="message" placeholder="Mensagem" required></textarea>
-    <br/><br/>
-    <button type="submit">Enviar</button>
+    <input type="text" id="number" placeholder="Número com DDI (ex: 5599999999999)" required />
+    <textarea id="message" placeholder="Digite a mensagem" required></textarea>
+    <button type="submit">Enviar Mensagem</button>
   </form>
   <p id="sendResult"></p>
+  <h2>Enviar Mensagens em Massa (via Planilha)</h2>
+  <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" />
+  <br/>
+  <select id="headerRowSelector" required></select>
+  <select id="colNumber" required></select>
+  <br/>
+  <h3>Mensagem personalizada (use variáveis como ${nome}, ${turma})</h3>
+  <textarea id="templateMessage" placeholder="Ex: Olá ${nome}, sua turma é ${turma}." rows="4" cols="50"></textarea>
+  <button id="sendMessagesButton">Enviar Mensagens da Planilha</button>
+  <p id="batchResult"></p>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
