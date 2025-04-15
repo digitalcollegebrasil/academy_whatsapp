@@ -5,3 +5,4 @@ node_modules
 *.xls
 /uploads
 dist
+*.txt

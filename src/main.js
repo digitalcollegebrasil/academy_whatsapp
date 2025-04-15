@@ -9,7 +9,8 @@ function createWindow() {
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
+      worldSafeExecuteJavascript: true
     }
   });
 
