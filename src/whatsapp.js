@@ -1,9 +1,30 @@
+const fs = require('fs');
+const logStream = fs.createWriteStream('log.txt', { flags: 'a' });
+
+const originalLog = console.log;
+const originalError = console.error;
+
+const log = (...args) => {
+    const message = args.map(a => (typeof a === 'object' ? JSON.stringify(a, null, 2) : a)).join(' ');
+    logStream.write(`[${new Date().toISOString()}] ${message}\n`);
+    originalLog(...args);
+};
+
+const error = (...args) => {
+    const message = args.map(a => (typeof a === 'object' ? JSON.stringify(a, null, 2) : a)).join(' ');
+    logStream.write(`[${new Date().toISOString()}] ERROR: ${message}\n`);
+    originalError(...args);
+};
+
+console.log = log;
+console.error = error;
+
 const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const WebSocket = require('ws');
-const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const os = require('os');
 
 let client;
 let wss;
@@ -14,7 +35,14 @@ const upload = multer({ storage: storage });
 
 function createClient() {
     client = new Client({
-        authStrategy: new LocalAuth(),
+        authStrategy: new LocalAuth({
+            dataPath: path.join(os.homedir(), 'wwebjs_data')
+        }),
+        puppeteer: {
+            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        }
     });
 
     client.on('qr', (qr) => {
@@ -38,7 +66,15 @@ function createClient() {
                 }
             });
         }
-    });    
+    });
+
+    client.on('auth_failure', (msg) => {
+        console.error('❌ Falha na autenticação:', msg);
+    });
+    
+    client.on('disconnected', (reason) => {
+        console.warn('⚠️ Cliente desconectado:', reason);
+    });
 
     client.initialize();
 }
@@ -109,27 +145,27 @@ function startWhatsApp() {
     let isResetting = false;
 
     app.post('/reset-session', async (req, res) => {
+        console.log('Requisição recebida em /reset-session');
         if (isResetting) return res.status(429).json({ error: 'Reset em andamento.' });
         isResetting = true;
-      
+    
         try {
-          if (client) await client.destroy();
-          await new Promise(resolve => setTimeout(resolve, 1000));
-      
-          const authPath = path.join(__dirname, '.wwebjs_auth');
-          const cachePath = path.join(__dirname, '.wwebjs_cache');
-      
-          if (fs.existsSync(authPath)) fs.rmSync(authPath, { recursive: true, force: true });
-          if (fs.existsSync(cachePath)) fs.rmSync(cachePath, { recursive: true, force: true });
-      
-          await createClient();
-      
-          res.json({ message: 'Sessão resetada com sucesso.' });
+            if (client) await client.destroy();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+    
+            const sessionPath = path.join(os.homedir(), 'wwebjs_data');
+            if (fs.existsSync(sessionPath)) {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+                console.log('🗑️ Sessão apagada com sucesso!');
+            }
+    
+            createClient();
+            res.json({ message: 'Sessão resetada com sucesso.' });
         } catch (err) {
-          console.error('Erro ao resetar a sessão:', err);
-          res.status(500).json({ error: 'Erro ao resetar a sessão.' });
+            console.error('Erro ao resetar a sessão:', err);
+            res.status(500).json({ error: 'Erro ao resetar a sessão.' });
         } finally {
-          isResetting = false;
+            isResetting = false;
         }
     });
 
