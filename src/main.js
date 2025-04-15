@@ -7,12 +7,16 @@ function createWindow() {
     width: 1000,
     height: 800,
     icon: path.join(__dirname, 'assets', 'icon.png'),
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    }
   });
 
-  win.loadFile('renderer.html');
+  win.loadFile(path.join(__dirname, 'renderer.html'));
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await startWhatsApp();
   createWindow();
-  startWhatsApp();
 });

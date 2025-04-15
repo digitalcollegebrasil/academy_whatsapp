@@ -142,8 +142,10 @@ function startWhatsApp() {
         res.json({ status });
     });
 
-    server = app.listen(3000, () => {
-        console.log('Servidor rodando na porta 3000');
+    const PORT = process.env.PORT || 3000;
+
+    server = app.listen(PORT, () => {
+        console.log(`Servidor rodando na porta ${PORT}`);
     });
 
     wss = new WebSocket.Server({ server });

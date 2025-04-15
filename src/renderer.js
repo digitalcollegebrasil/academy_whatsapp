@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const ws = new WebSocket('ws://localhost:3000');
+  const PORT = window.localStorage.getItem('apiPort') || 3000;
+  const ws = new WebSocket(`ws://localhost:${PORT}`);
+
+  const baseURL = `http://localhost:${PORT}`;
 
   ws.onmessage = (event) => {
     const message = JSON.parse(event.data);
@@ -26,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const checkApiStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3000/status');
+      const response = await fetch(`${baseURL}/status`);
       const data = await response.json();
       const statusText = data.status === 'Conectado' ? 'API Conectada' : 'API Desconectada';
       document.getElementById('status').textContent = statusText;
@@ -84,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirmacao) return;
   
     try {
-      const res = await fetch('http://localhost:3000/reset-session', {
+      const res = await fetch(`${baseURL}/reset-session`, {
         method: 'POST'
       });
   
@@ -123,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
         console.log("Enviando mensagem (e arquivos, caso tenha) para", number);
-        const res = await fetch('http://localhost:3000/send-message', {
+        const res = await fetch(`${baseURL}/send-message`, {
             method: 'POST',
             body: formData
         });
@@ -232,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   
       try {
-        const res = await fetch('http://localhost:3000/send-message', {
+        const res = await fetch(`${baseURL}/send-message`, {
           method: 'POST',
           body: formData
         });

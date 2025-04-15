@@ -1,22 +1,49 @@
 {
   "name": "academy_whatsapp",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "src/main.js",
+  "description": "Sistema de envio de mensagens por WhatsApp",
+  "author": "Cauan Victor",
+  "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "build": {
+    "appId": "com.digitalcollege.academywhatsapp",
+    "productName": "Sistema de Envio de Mensagens por WhatsApp",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "extraResources": [
+      "src/assets/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/assets"
+    }
+  },
   "dependencies": {
-    "electron": "^35.1.5",
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.2",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.26.0",
     "ws": "^8.18.1",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12"
   }
 }
