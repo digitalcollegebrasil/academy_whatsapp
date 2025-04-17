@@ -106,10 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('resetResult').style.color = 'red';
     }
   });
-  
 
   document.getElementById('sendForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    document.getElementById('sendButton').disabled = true;
+    document.getElementById('sendButton').textContent = 'Enviando...';
     console.log("Formulário enviado (sem recarregar a página)");
     
     const number = document.getElementById('number').value;
@@ -146,6 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Erro ao conectar com o servidor:", err);
         document.getElementById('sendResult').textContent = 'Erro ao conectar com o servidor.';
         document.getElementById('sendResult').style.color = 'red';
+    } finally {
+      document.getElementById('sendButton').disabled = false;
+      document.getElementById('sendButton').textContent = 'Enviar Mensagem'
     }
   });
 
@@ -191,27 +195,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function enviarMensagensPlanilha() {
+    const sendButton = document.getElementById('sendMessagesButton');
+    sendButton.disabled = true;
+    sendButton.textContent = 'Enviando...';
+  
     const colNumIdx = parseInt(document.getElementById('colNumber').value);
-    console.log('Coluna selecionada:', colNumIdx);
-  
     const headerRow = parseInt(document.getElementById('headerRowSelector').value);
-    console.log('Linha de cabeçalho selecionada:', headerRow);
-  
     const headers = planilha[headerRow];
-    console.log('Cabeçalhos:', headers);
-  
-    if (!headers) {
-      console.error('Cabeçalhos não encontrados para a linha selecionada');
-      return;
-    }
-  
     const template = document.getElementById('templateMessage').value;
     const files = document.getElementById('files-sheets-message').files;
   
     let enviados = 0;
+    let erros = [];
   
-    for (let i = headerRow + 1; i < planilhaData.length; i++) {
-      const linha = planilhaData[i];
+    for (let i = headerRow + 1; i < planilha.length; i++) {
+      const linha = planilha[i];    
       if (!linha || !linha[colNumIdx]) continue;
   
       const rawNumber = linha[colNumIdx]?.toString();
@@ -225,14 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   
       const message = template.replace(/\$\{([^}]+)\}/g, (_, key) => dataObj[key.trim()] || '');
-
+  
       const formData = new FormData();
       formData.append('number', number);
       formData.append('message', message);
-
-      Array.from(files).forEach(file => {
-        formData.append('files', file);
-      });
+      Array.from(files).forEach(file => formData.append('files', file));
   
       try {
         const res = await fetch(`${baseURL}/send-message`, {
@@ -242,15 +237,37 @@ document.addEventListener('DOMContentLoaded', () => {
   
         const result = await res.json();
         if (res.ok) enviados++;
+        else throw new Error(result?.error || 'Erro desconhecido');
       } catch (error) {
         console.error('Erro ao enviar para:', number, error);
+        erros.push({ Número: number, Erro: error.message });
       }
   
+      document.getElementById('batchResult').textContent = `Mensagens enviadas: ${enviados}`;
       await new Promise(resolve => setTimeout(resolve, 8000));
     }
   
-    document.getElementById('batchResult').textContent = `Mensagens enviadas: ${enviados}`;
-  }
+    sendButton.disabled = false;
+    sendButton.textContent = 'Enviar Mensagens';
+  
+    if (erros.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(erros);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Erros");
+  
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+  
+      const downloadLink = document.createElement("a");
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = "erros_envio.xlsx";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  
+    document.getElementById('batchResult').textContent = `Envio concluído! Total enviados: ${enviados}. Erros: ${erros.length}`;
+  }  
 
   document.getElementById('sendMessagesButton').addEventListener('click', enviarMensagensPlanilha);
 
