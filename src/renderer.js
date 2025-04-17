@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let erros = [];
   
     for (let i = headerRow + 1; i < planilha.length; i++) {
-      const linha = planilha[i];    
+      const linha = planilha[i];
       if (!linha || !linha[colNumIdx]) continue;
   
       const rawNumber = linha[colNumIdx]?.toString();
@@ -236,11 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
   
         const result = await res.json();
-        if (res.ok) enviados++;
-        else throw new Error(result?.error || 'Erro desconhecido');
+        if (res.ok) {
+          enviados++;
+        } else {
+          throw new Error(result?.error || 'Erro desconhecido');
+        }
       } catch (error) {
         console.error('Erro ao enviar para:', number, error);
-        erros.push({ Número: number, Erro: error.message });
+  
+        const erroLinha = {};
+        headers.forEach((key, index) => {
+          erroLinha[key] = linha[index];
+        });
+        erroLinha['Erro'] = error.message;
+  
+        erros.push(erroLinha);
       }
   
       document.getElementById('batchResult').textContent = `Mensagens enviadas: ${enviados}`;
