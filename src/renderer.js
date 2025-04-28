@@ -155,45 +155,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let planilha = [];
   let planilhaData = [];
+  let workbook;
 
   document.getElementById('excelFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
-
+  
     reader.onload = (evt) => {
       const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-
-      const primeiraAba = workbook.SheetNames[0];
-      planilha = XLSX.utils.sheet_to_json(workbook.Sheets[primeiraAba], { header: 1 });
-
-      const headers = planilha[0];
-      planilhaData = planilha.slice(1);
-
-      const headerSelector = document.getElementById('headerRowSelector');
-      headerSelector.innerHTML = '';
-
-      for (let i = 0; i < Math.min(10, planilha.length); i++) {
-        const preview = planilha[i].join(' | ');
-        headerSelector.innerHTML += `<option value="${i}">Linha ${i + 1}: ${preview}</option>`;
-      }
-
-      const colNumber = document.getElementById('colNumber');
+      workbook = XLSX.read(data, { type: 'array' });
+  
+      carregarAba(workbook.SheetNames[0]);
       
-      colNumber.innerHTML = '';
-
-      headers.forEach((col, idx) => {
-        const option = `<option value="${idx}">${col}</option>`;
-        colNumber.innerHTML += option;
+      const sheetPageSelector = document.getElementById('sheetPageSelector');
+      sheetPageSelector.innerHTML = '';
+  
+      workbook.SheetNames.forEach(sheetName => {
+        const option = document.createElement('option');
+        option.value = sheetName;
+        option.textContent = sheetName;
+        sheetPageSelector.appendChild(option);
       });
-
-      console.log(`Planilha carregada com ${planilhaData.length} registros`);
-      document.getElementById('batchResult').textContent = `Planilha carregada com ${planilhaData.length} registros`;
     };
-
+  
     reader.readAsArrayBuffer(file);
   });
-
+  
+  function carregarAba(sheetName) {
+    planilha = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+    planilhaData = planilha.slice(1);
+  
+    const headers = planilha[0];
+  
+    const headerSelector = document.getElementById('headerRowSelector');
+    headerSelector.innerHTML = '';
+  
+    for (let i = 0; i < Math.min(10, planilha.length); i++) {
+      const preview = planilha[i].join(' | ');
+      headerSelector.innerHTML += `<option value="${i}">Linha ${i + 1}: ${preview}</option>`;
+    }
+  
+    const colNumber = document.getElementById('colNumber');
+    colNumber.innerHTML = '';
+  
+    headers.forEach((col, idx) => {
+      const option = `<option value="${idx}">${col}</option>`;
+      colNumber.innerHTML += option;
+    })
+  
+    document.getElementById('batchResult').textContent = `Planilha da aba "${sheetName}" carregada com ${planilhaData.length} registros`;
+    console.log(`Planilha da aba "${sheetName}" carregada com ${planilhaData.length} registros`);
+  }
+  
+  document.getElementById('sheetPageSelector').addEventListener('change', (e) => {
+    const sheetName = e.target.value;
+    carregarAba(sheetName);
+  });
+  
+  document.getElementById('headerRowSelector').addEventListener('change', (e) => {
+    const selectedHeaderIndex = parseInt(e.target.value);
+    const selectedHeaderRow = planilha[selectedHeaderIndex];
+  
+    if (!selectedHeaderRow) {
+      console.error('Linha de cabeçalho inválida selecionada');
+      return;
+    }
+  
+    const colNumber = document.getElementById('colNumber');
+    colNumber.innerHTML = '';
+  
+    selectedHeaderRow.forEach((col, idx) => {
+      const option = `<option value="${idx}">${col}</option>`;
+      colNumber.innerHTML += option;
+    });
+  });
+  
   async function enviarMensagensPlanilha() {
     const sendButton = document.getElementById('sendMessagesButton');
     sendButton.disabled = true;
@@ -277,8 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     document.getElementById('batchResult').textContent = `Envio concluído! Total enviados: ${enviados}. Erros: ${erros.length}`;
-  }  
-
+  }
+  
   document.getElementById('sendMessagesButton').addEventListener('click', enviarMensagensPlanilha);
 
   document.getElementById('headerRowSelector').addEventListener('change', (e) => {
