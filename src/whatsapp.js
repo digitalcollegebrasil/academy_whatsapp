@@ -94,51 +94,68 @@ function startWhatsApp() {
         }
     
         const cleanNumber = number.replace(/\D/g, '');
-        if (cleanNumber.length < 10 || cleanNumber.length > 15) {
+    
+        if (cleanNumber.length < 12 || cleanNumber.length > 13) {
             return res.status(400).json({ error: 'Número inválido!' });
         }
     
         const trySend = async (num) => {
             const chatId = num + '@c.us';
-            const isRegistered = await client.isRegisteredUser(chatId);
-            if (!isRegistered) return false;
     
             try {
                 await client.sendMessage(chatId, message);
-    
-                if (files.length > 0) {
+                console.log(`✅ Mensagem enviada para ${num}`);
+
+                if (files && files.length > 0) {
                     for (const file of files) {
-                        const media = new MessageMedia(file.mimetype, file.buffer.toString('base64'), file.originalname);
+                        const media = new MessageMedia(
+                            file.mimetype,
+                            file.buffer.toString('base64'),
+                            file.originalname
+                        );
+                        
+                        await new Promise(resolve => setTimeout(resolve, 8000));
                         await client.sendMessage(chatId, media);
+                        console.log(`✅ Arquivo ${file.originalname} enviado para ${num}`);
                     }
                 }
     
-                console.log(`✅ Mensagem e arquivos enviados para ${num}`);
                 return true;
             } catch (err) {
-                console.error(`Erro ao enviar mensagem para ${num}:`, err);
+                console.error(`Erro ao enviar mensagem ou arquivos para ${num}:`, err);
                 return false;
             }
         };
     
-        let sent = await trySend(cleanNumber);
-
-        if (!sent) {
-            if (cleanNumber.length === 13 && cleanNumber.charAt(4) === '9') {
-                const numberWithoutNine = cleanNumber.slice(0, 4) + cleanNumber.slice(5);
-                console.log(`🔁 Tentando sem o 9: ${numberWithoutNine}`);
-                sent = await trySend(numberWithoutNine);
-            } else if (cleanNumber.length === 12) {
-                const numberWithNine = cleanNumber.slice(0, 4) + '9' + cleanNumber.slice(4);
-                console.log(`🔁 Tentando com o 9: ${numberWithNine}`);
-                sent = await trySend(numberWithNine);
+        const variations = [cleanNumber];
+    
+        if (cleanNumber.length === 12) {
+            const prefix = cleanNumber.slice(0, 4);
+            const rest = cleanNumber.slice(4);
+            const com9 = prefix + '9' + rest;
+            if (!variations.includes(com9)) variations.push(com9);
+        }
+    
+        if (cleanNumber.length === 13) {
+            const prefix = cleanNumber.slice(0, 4);
+            const rest = cleanNumber.slice(4);
+            if (rest.charAt(0) === '9') {
+                const sem9 = prefix + rest.slice(1);
+                if (!variations.includes(sem9)) variations.push(sem9);
             }
         }
     
-        if (sent) {
-            return res.json({ success: 'Mensagem e arquivos enviados com sucesso!' });
+        let algumEnviado = false;
+    
+        for (const num of variations) {
+            const enviado = await trySend(num);
+            if (enviado) algumEnviado = true;
+        }
+    
+        if (algumEnviado) {
+            return res.status(200).json({ success: 'Mensagem e arquivos enviados com sucesso!' });
         } else {
-            return res.status(500).json({ error: 'Erro ao enviar a mensagem e arquivos!' });
+            return res.status(400).json({ error: 'Não foi possível enviar a mensagem para nenhuma variação do número.' });
         }
     });
 
