@@ -85,6 +85,8 @@ function startWhatsApp() {
     const app = express();
     app.use(express.json());
 
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     app.post('/send-message', upload.array('files'), async (req, res) => {
         const { number, message } = req.body;
         const files = req.files;
@@ -103,6 +105,7 @@ function startWhatsApp() {
             const chatId = num + '@c.us';
     
             try {
+                await delay(8000);
                 await client.sendMessage(chatId, message);
                 console.log(`✅ Mensagem enviada para ${num}`);
 
@@ -114,7 +117,7 @@ function startWhatsApp() {
                             file.originalname
                         );
                         
-                        await new Promise(resolve => setTimeout(resolve, 8000));
+                        await delay(8000);
                         await client.sendMessage(chatId, media);
                         console.log(`✅ Arquivo ${file.originalname} enviado para ${num}`);
                     }

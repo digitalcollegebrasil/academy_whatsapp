@@ -251,8 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const rawNumber = linha[colNumIdx]?.toString();
       if (!rawNumber) continue;
   
-      const number = '55' + rawNumber.replace(/\D/g, '');
-  
+      let cleanNumber = rawNumber.replace(/\D/g, '');
+      const number = cleanNumber.startsWith('55') ? cleanNumber : '55' + cleanNumber;
+
       const dataObj = {};
       headers.forEach((key, index) => {
         dataObj[key] = linha[index];
