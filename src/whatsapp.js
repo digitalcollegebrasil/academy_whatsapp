@@ -80,34 +80,44 @@ function createClient() {
 }
 
 function startWhatsApp() {
-    createClient()
+    createClient();
 
     const app = express();
     app.use(express.json());
+
+    const baseDelay = 8000;
+    let messageCount = 0;
 
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     app.post('/send-message', upload.array('files'), async (req, res) => {
         const { number, message } = req.body;
         const files = req.files;
-    
+
         if (!number || !message) {
             return res.status(400).json({ error: 'Número e mensagem são necessários!' });
         }
-    
+
         const cleanNumber = number.replace(/\D/g, '');
-    
+
         if (cleanNumber.length < 12 || cleanNumber.length > 13) {
             return res.status(400).json({ error: 'Número inválido!' });
         }
-    
+
         const trySend = async (num) => {
             const chatId = num + '@c.us';
-    
+
+            const increaseFactor = Math.floor(messageCount / 10);
+            const currentDelay = baseDelay + (increaseFactor * 2000);
+            if (messageCount >= 50) {
+                messageCount = 0;
+            }
+
             try {
-                await delay(8000);
+                await delay(currentDelay);
                 await client.sendMessage(chatId, message);
-                console.log(`✅ Mensagem enviada para ${num}`);
+                console.log(`✅ Mensagem enviada para ${num} (delay: ${currentDelay}ms)`);
+                messageCount++;
 
                 if (files && files.length > 0) {
                     for (const file of files) {
@@ -116,29 +126,30 @@ function startWhatsApp() {
                             file.buffer.toString('base64'),
                             file.originalname
                         );
-                        
-                        await delay(8000);
+
+                        await delay(currentDelay);
                         await client.sendMessage(chatId, media);
                         console.log(`✅ Arquivo ${file.originalname} enviado para ${num}`);
+                        messageCount++;
                     }
                 }
-    
+
                 return true;
             } catch (err) {
                 console.error(`Erro ao enviar mensagem ou arquivos para ${num}:`, err);
                 return false;
             }
         };
-    
+
         const variations = [cleanNumber];
-    
+
         if (cleanNumber.length === 12) {
             const prefix = cleanNumber.slice(0, 4);
             const rest = cleanNumber.slice(4);
             const com9 = prefix + '9' + rest;
             if (!variations.includes(com9)) variations.push(com9);
         }
-    
+
         if (cleanNumber.length === 13) {
             const prefix = cleanNumber.slice(0, 4);
             const rest = cleanNumber.slice(4);
@@ -147,14 +158,14 @@ function startWhatsApp() {
                 if (!variations.includes(sem9)) variations.push(sem9);
             }
         }
-    
+
         let algumEnviado = false;
-    
+
         for (const num of variations) {
             const enviado = await trySend(num);
             if (enviado) algumEnviado = true;
         }
-    
+
         if (algumEnviado) {
             return res.status(200).json({ success: 'Mensagem e arquivos enviados com sucesso!' });
         } else {
