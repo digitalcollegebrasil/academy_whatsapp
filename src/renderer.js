@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   
       document.getElementById('batchResult').textContent = `Mensagens enviadas: ${enviados}`;
-      await new Promise(resolve => setTimeout(resolve, 8000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
     }
   
     sendButton.disabled = false;

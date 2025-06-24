@@ -85,7 +85,7 @@ function startWhatsApp() {
     const app = express();
     app.use(express.json());
 
-    const baseDelay = 8000;
+    const baseDelay = 10000;
     let messageCount = 0;
 
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
