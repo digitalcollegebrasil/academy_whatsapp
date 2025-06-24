@@ -1,6 +1,6 @@
 {
   "name": "academy_whatsapp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "src/main.js",
   "description": "Sistema de envio de mensagens por WhatsApp",
   "author": "Cauan Victor",
