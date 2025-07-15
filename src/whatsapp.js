@@ -40,7 +40,7 @@ function createClient() {
         }),
         puppeteer: {
             executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            headless: true,
+            headless: false,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         }
     });
@@ -78,6 +78,15 @@ function createClient() {
     });
 
     client.initialize();
+
+    client.once('ready', async () => {
+        if (client.pupBrowser) {
+            client.pupBrowser.on('disconnected', async () => {
+                console.warn('🚪 Chrome foi fechado manualmente. Reiniciando cliente...');
+                await restartClient();
+            });
+        }
+    });
 }
 
 async function restartClient() {
