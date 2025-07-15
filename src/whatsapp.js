@@ -72,11 +72,30 @@ function createClient() {
         console.error('❌ Falha na autenticação:', msg);
     });
     
-    client.on('disconnected', (reason) => {
+    client.on('disconnected', async (reason) => {
         console.warn('⚠️ Cliente desconectado:', reason);
+        await restartClient();
     });
 
     client.initialize();
+}
+
+async function restartClient() {
+    try {
+        console.warn('♻️ Reiniciando cliente do WhatsApp...');
+        if (client) await client.destroy();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const sessionPath = path.join(os.homedir(), 'wwebjs_data');
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+            console.log('🗑️ Sessão apagada para reinicialização!');
+        }
+
+        createClient();
+    } catch (err) {
+        console.error('Erro ao reiniciar o cliente:', err);
+    }
 }
 
 function startWhatsApp() {
@@ -104,29 +123,21 @@ function startWhatsApp() {
             return res.status(400).json({ error: 'Número inválido!' });
         }
 
+        let consecutiveFailures = 0;
+
         const trySend = async (num) => {
             const chatId = num + '@c.us';
-
-            const increaseFactor = Math.floor(messageCount / 10);
-            const currentDelay = baseDelay + (increaseFactor * 2000);
-            if (messageCount >= 50) {
-                messageCount = 0;
-            }
 
             try {
                 await delay(currentDelay);
                 await client.sendMessage(chatId, message);
-                console.log(`✅ Mensagem enviada para ${num} (delay: ${currentDelay}ms)`);
+                console.log(`✅ Mensagem enviada para ${num}`);
                 messageCount++;
+                consecutiveFailures = 0;
 
                 if (files && files.length > 0) {
                     for (const file of files) {
-                        const media = new MessageMedia(
-                            file.mimetype,
-                            file.buffer.toString('base64'),
-                            file.originalname
-                        );
-
+                        const media = new MessageMedia(file.mimetype, file.buffer.toString('base64'), file.originalname);
                         await delay(currentDelay);
                         await client.sendMessage(chatId, media);
                         console.log(`✅ Arquivo ${file.originalname} enviado para ${num}`);
@@ -136,7 +147,13 @@ function startWhatsApp() {
 
                 return true;
             } catch (err) {
-                console.error(`Erro ao enviar mensagem ou arquivos para ${num}:`, err);
+                console.error(`Erro ao enviar mensagem para ${num}:`, err);
+                consecutiveFailures++;
+                if (consecutiveFailures >= 5) {
+                    console.warn('🚨 Falhas consecutivas detectadas. Reiniciando cliente...');
+                    await restartClient();
+                    consecutiveFailures = 0;
+                }
                 return false;
             }
         };
